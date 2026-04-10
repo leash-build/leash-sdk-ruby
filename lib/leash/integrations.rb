@@ -22,9 +22,11 @@ module Leash
   class Integrations
     # @param auth_token [String] the leash-auth JWT token
     # @param platform_url [String] base URL of the Leash platform API
-    def initialize(auth_token:, platform_url: DEFAULT_PLATFORM_URL)
+    # @param api_key [String, nil] optional API key for server-to-server auth
+    def initialize(auth_token:, platform_url: DEFAULT_PLATFORM_URL, api_key: nil)
       @auth_token = auth_token
       @platform_url = platform_url.chomp("/")
+      @api_key = api_key
     end
 
     # Gmail integration client.
@@ -63,6 +65,7 @@ module Leash
       request = Net::HTTP::Post.new(uri)
       request["Content-Type"] = "application/json"
       request["Authorization"] = "Bearer #{@auth_token}"
+      request["X-API-Key"] = @api_key if @api_key
       request.body = (params || {}).to_json
 
       response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
@@ -97,6 +100,7 @@ module Leash
 
       request = Net::HTTP::Get.new(uri)
       request["Authorization"] = "Bearer #{@auth_token}"
+      request["X-API-Key"] = @api_key if @api_key
 
       response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
         http.request(request)
