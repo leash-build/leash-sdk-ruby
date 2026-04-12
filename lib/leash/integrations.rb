@@ -24,13 +24,9 @@ module Leash
     # @param platform_url [String] base URL of the Leash platform API
     # @param api_key [String, nil] optional API key for server-to-server auth
     def initialize(auth_token:, platform_url: DEFAULT_PLATFORM_URL, api_key: nil)
-      if api_key.nil?
-        raise ArgumentError, "API key required. Create one with `leash keys create <app-name>` or in your app settings at leash.build"
-      end
-
       @auth_token = auth_token
       @platform_url = platform_url.chomp("/")
-      @api_key = api_key
+      @api_key = api_key || ENV["LEASH_API_KEY"]
     end
 
     # Gmail integration client.
