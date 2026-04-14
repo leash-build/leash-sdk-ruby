@@ -3,5 +3,5 @@
 require_relative "leash/integrations"
 
 module Leash
-  VERSION = "0.1.0"
+  VERSION = "0.2.0"
 end
