@@ -5,6 +5,7 @@ require "json"
 require "uri"
 
 require_relative "errors"
+require_relative "custom_integration"
 require_relative "gmail"
 require_relative "calendar"
 require_relative "drive"
@@ -48,6 +49,18 @@ module Leash
     # @return [DriveClient]
     def drive
       @drive ||= DriveClient.new(method(:call))
+    end
+
+    # Access a custom integration by name. Returns an untyped client.
+    #
+    # @param name [String] the custom integration name
+    # @return [CustomIntegration]
+    #
+    # @example
+    #   stripe = client.integration("stripe")
+    #   charges = stripe.call("/v1/charges", method: "GET")
+    def integration(name)
+      CustomIntegration.new(name, method(:call_custom))
     end
 
     # Generic proxy call for any provider action.
@@ -127,6 +140,41 @@ module Leash
     end
 
     private
+
+    # Call the custom integration proxy endpoint.
+    #
+    # @param name [String] the custom integration name
+    # @param path [String] the endpoint path to forward
+    # @param method [String] HTTP method
+    # @param body [Hash, nil] optional JSON body to forward
+    # @param headers [Hash, nil] optional extra headers to forward
+    # @return [Object] the "data" field from the platform response
+    # @raise [Leash::Error] if the platform returns a non-success response
+    def call_custom(name, path, method = "GET", body = nil, headers = nil)
+      uri = URI("#{@platform_url}/api/integrations/custom/#{name}")
+
+      payload = { path: path, method: method }
+      payload[:body] = body if body
+      payload[:headers] = headers if headers
+
+      request = Net::HTTP::Post.new(uri)
+      request["Content-Type"] = "application/json"
+      request["Authorization"] = "Bearer #{@auth_token}"
+      request["X-API-Key"] = @api_key if @api_key
+      request.body = payload.to_json
+
+      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+        http.request(request)
+      end
+
+      data = JSON.parse(response.body)
+
+      unless data["success"]
+        raise_error(data)
+      end
+
+      data["data"]
+    end
 
     # Map error codes to specific exception classes.
     #
