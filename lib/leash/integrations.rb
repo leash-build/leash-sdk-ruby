@@ -139,6 +139,67 @@ module Leash
       url
     end
 
+    # Call any MCP server tool directly.
+    #
+    # @param package_name [String] the npm package name of the MCP server
+    # @param tool [String] the tool name to invoke
+    # @param args [Hash] optional arguments to pass to the tool
+    # @return [Object] the "data" field from the platform response
+    # @raise [Leash::Error] if the platform returns a non-success response
+    def mcp(package_name, tool, args = {})
+      uri = URI("#{@platform_url}/api/mcp/run")
+
+      request = Net::HTTP::Post.new(uri)
+      request["Content-Type"] = "application/json"
+      request["Authorization"] = "Bearer #{@auth_token}" if @auth_token
+      request["X-API-Key"] = @api_key if @api_key
+
+      payload = { package: package_name, tool: tool }
+      payload[:args] = args unless args.nil? || args.empty?
+      request.body = payload.to_json
+
+      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+        http.request(request)
+      end
+
+      data = JSON.parse(response.body)
+
+      unless data["success"]
+        raise_error(data)
+      end
+
+      data["data"]
+    end
+
+    # Fetch env vars from the platform. Cached after first call.
+    #
+    # @param key [String, nil] optional key to look up
+    # @return [Hash, String, nil] all env vars as a Hash, or a single value if key given
+    # @raise [Leash::Error] if the platform returns a non-success response
+    def get_env(key = nil)
+      @env_cache ||= begin
+        uri = URI("#{@platform_url}/api/apps/env")
+
+        request = Net::HTTP::Get.new(uri)
+        request["Authorization"] = "Bearer #{@auth_token}" if @auth_token
+        request["X-API-Key"] = @api_key if @api_key
+
+        response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+          http.request(request)
+        end
+
+        data = JSON.parse(response.body)
+
+        unless data["success"]
+          raise_error(data)
+        end
+
+        data["data"] || {}
+      end
+
+      key ? @env_cache[key] : @env_cache
+    end
+
     private
 
     # Call the custom integration proxy endpoint.
