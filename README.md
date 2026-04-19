@@ -49,6 +49,25 @@ end
 - custom integration calls
 - app env fetch and caching
 
+## Server Auth
+
+The SDK includes helpers for authenticating users on the server side by reading
+the `leash-auth` cookie set by the Leash platform.
+
+```ruby
+# Rails / Sinatra
+user = Leash::Auth.get_user(request)
+# => #<Leash::User id="usr_123" email="alice@example.com" name="Alice">
+```
+
+## MCP Calls
+
+Execute MCP-backed tools through the platform:
+
+```ruby
+result = client.run_mcp(package: "@some/mcp-package", tool: "tool-name", args: { key: "value" })
+```
+
 ## Notes
 
 - `auth_token` should be a valid Leash platform JWT
