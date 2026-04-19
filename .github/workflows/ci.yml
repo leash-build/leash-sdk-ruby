@@ -21,4 +21,4 @@ jobs:
           bundler-cache: true
 
       - name: Run tests
-        run: ruby test/test_leash.rb && ruby test/test_isolation.rb
+        run: bundle exec ruby test/test_leash.rb && bundle exec ruby test/test_isolation.rb && bundle exec ruby test/test_auth.rb
