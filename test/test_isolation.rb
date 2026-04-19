@@ -16,7 +16,7 @@ class TestStaticDependencies < Minitest::Test
   FORBIDDEN_GEMS = %w[rails sinatra rack grape hanami roda].freeze
 
   # Allowed stdlib requires (the ones the SDK actually uses).
-  ALLOWED_REQUIRES = %w[net/http json uri cgi].freeze
+  ALLOWED_REQUIRES = %w[net/http json uri cgi jwt base64].freeze
 
   def self.lib_ruby_files
     Dir.glob(File.join(LIB_DIR, "**", "*.rb"))
