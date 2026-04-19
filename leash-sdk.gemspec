@@ -21,5 +21,5 @@ Gem::Specification.new do |spec|
   spec.files = Dir["lib/**/*.rb"] + ["leash-sdk.gemspec", "Gemfile", "README.md", "LICENSE"]
   spec.require_paths = ["lib"]
 
-  # No runtime dependencies -- stdlib only (net/http, json, uri).
+  spec.add_dependency "jwt", ">= 2.7"
 end
