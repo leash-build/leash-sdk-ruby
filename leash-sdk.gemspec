@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "lib/leash"
+require_relative "lib/leash/version"
 
 Gem::Specification.new do |spec|
   spec.name          = "leash-sdk"
