@@ -454,4 +454,103 @@ class TestLeashClient < Minitest::Test
     result = client.call("gmail", "list-messages")
     assert_equal({ "messages" => [{ "id" => "1" }] }, result)
   end
+
+  # ---- get_access_token ----------------------------------------------------
+
+  def test_get_access_token_url_and_method
+    NetHTTPStub.canned_body = '{"success":true,"data":{"accessToken":"slack-xoxb-abc","provider":"slack"}}'
+    client = Leash::Integrations.new(auth_token: "tok")
+    client.get_access_token("slack")
+    assert_equal "/api/integrations/token", NetHTTPStub.last_request.uri.path
+    assert_instance_of Net::HTTP::Post, NetHTTPStub.last_request
+  end
+
+  def test_get_access_token_sends_provider_in_body
+    NetHTTPStub.canned_body = '{"success":true,"data":{"accessToken":"slack-xoxb-abc","provider":"slack"}}'
+    client = Leash::Integrations.new(auth_token: "tok")
+    client.get_access_token("slack")
+    body = JSON.parse(NetHTTPStub.last_request.body)
+    assert_equal "slack", body["provider"]
+  end
+
+  def test_get_access_token_sends_auth_headers
+    NetHTTPStub.canned_body = '{"success":true,"data":{"accessToken":"tkn","provider":"gmail"}}'
+    client = Leash::Integrations.new(auth_token: "my-jwt", api_key: "my-key")
+    client.get_access_token("gmail")
+    assert_equal "Bearer my-jwt", NetHTTPStub.last_request["Authorization"]
+    assert_equal "my-key", NetHTTPStub.last_request["X-API-Key"]
+    assert_equal "application/json", NetHTTPStub.last_request["Content-Type"]
+  end
+
+  def test_get_access_token_returns_token_string
+    NetHTTPStub.canned_body = '{"success":true,"data":{"accessToken":"slack-xoxb-abc","provider":"slack"}}'
+    client = Leash::Integrations.new(auth_token: "tok")
+    assert_equal "slack-xoxb-abc", client.get_access_token("slack")
+  end
+
+  def test_get_access_token_not_connected_error
+    NetHTTPStub.canned_body = '{"success":false,"error":"Slack not connected","code":"not_connected","connectUrl":"https://leash.build/connect/slack"}'
+    client = Leash::Integrations.new(auth_token: "tok")
+    err = assert_raises(Leash::NotConnectedError) { client.get_access_token("slack") }
+    assert_equal "not_connected", err.code
+    assert_equal "https://leash.build/connect/slack", err.connect_url
+    assert_equal "Slack not connected", err.message
+  end
+
+  def test_get_access_token_token_expired_error
+    NetHTTPStub.canned_body = '{"success":false,"error":"Token expired","code":"token_expired","connectUrl":"https://leash.build/connect/gmail"}'
+    client = Leash::Integrations.new(auth_token: "tok")
+    err = assert_raises(Leash::TokenExpiredError) { client.get_access_token("gmail") }
+    assert_equal "token_expired", err.code
+  end
+
+  # ---- get_custom_mcp_config -----------------------------------------------
+
+  def test_get_custom_mcp_config_url_and_method
+    NetHTTPStub.canned_body = '{"success":true,"data":{"slug":"acme","displayName":"Acme MCP","url":"https://mcp.acme.com","headers":{}}}'
+    client = Leash::Integrations.new(auth_token: "tok")
+    client.get_custom_mcp_config("acme")
+    assert_equal "/api/integrations/mcp-config/acme", NetHTTPStub.last_request.uri.path
+    assert_instance_of Net::HTTP::Get, NetHTTPStub.last_request
+  end
+
+  def test_get_custom_mcp_config_url_encodes_slug
+    NetHTTPStub.canned_body = '{"success":true,"data":{"slug":"acme/v2","displayName":"Acme","url":"https://mcp.acme.com","headers":{}}}'
+    client = Leash::Integrations.new(auth_token: "tok")
+    client.get_custom_mcp_config("acme/v2")
+    assert_equal "/api/integrations/mcp-config/acme%2Fv2", NetHTTPStub.last_request.uri.path
+  end
+
+  def test_get_custom_mcp_config_sends_auth_headers
+    NetHTTPStub.canned_body = '{"success":true,"data":{"slug":"acme","displayName":"Acme MCP","url":"https://mcp.acme.com","headers":{}}}'
+    client = Leash::Integrations.new(auth_token: "my-jwt", api_key: "my-key")
+    client.get_custom_mcp_config("acme")
+    assert_equal "Bearer my-jwt", NetHTTPStub.last_request["Authorization"]
+    assert_equal "my-key", NetHTTPStub.last_request["X-API-Key"]
+  end
+
+  def test_get_custom_mcp_config_returns_full_config
+    NetHTTPStub.canned_body = '{"success":true,"data":{"slug":"acme","displayName":"Acme MCP","url":"https://mcp.acme.com","headers":{"Authorization":"Bearer xyz"}}}'
+    client = Leash::Integrations.new(auth_token: "tok")
+    config = client.get_custom_mcp_config("acme")
+    assert_equal "acme", config["slug"]
+    assert_equal "Acme MCP", config["displayName"]
+    assert_equal "https://mcp.acme.com", config["url"]
+    assert_equal({ "Authorization" => "Bearer xyz" }, config["headers"])
+  end
+
+  def test_get_custom_mcp_config_unknown_mcp_server_error
+    NetHTTPStub.canned_body = '{"success":false,"error":"Unknown MCP server","code":"unknown_mcp_server"}'
+    client = Leash::Integrations.new(auth_token: "tok")
+    err = assert_raises(Leash::Error) { client.get_custom_mcp_config("nope") }
+    assert_equal "unknown_mcp_server", err.code
+    assert_equal "Unknown MCP server", err.message
+  end
+
+  def test_get_custom_mcp_config_invalid_api_key_error
+    NetHTTPStub.canned_body = '{"success":false,"error":"Invalid API key","code":"invalid_api_key"}'
+    client = Leash::Integrations.new(auth_token: "tok")
+    err = assert_raises(Leash::Error) { client.get_custom_mcp_config("acme") }
+    assert_equal "invalid_api_key", err.code
+  end
 end
