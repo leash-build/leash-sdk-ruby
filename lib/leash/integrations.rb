@@ -139,6 +139,67 @@ module Leash
       url
     end
 
+    # Get the user's current access token for a provider -- built-in or
+    # org-registered (LEA-142). Lets you call third-party APIs directly
+    # without proxying every request through Leash. Refresh-on-expiry
+    # happens transparently on the platform side.
+    #
+    # @param provider [String] the provider slug (e.g. "slack", "gmail")
+    # @return [String] the access token
+    # @raise [Leash::NotConnectedError] if the user hasn't completed the OAuth flow
+    # @raise [Leash::TokenExpiredError] if the token is expired and cannot be refreshed
+    # @raise [Leash::Error] if the platform returns a non-success response
+    def get_access_token(provider)
+      uri = URI("#{@platform_url}/api/integrations/token")
+
+      request = Net::HTTP::Post.new(uri)
+      request["Content-Type"] = "application/json"
+      request["Authorization"] = "Bearer #{@auth_token}" if @auth_token
+      request["X-API-Key"] = @api_key if @api_key
+      request.body = { provider: provider }.to_json
+
+      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+        http.request(request)
+      end
+
+      data = JSON.parse(response.body)
+
+      unless data["success"]
+        raise_error(data)
+      end
+
+      data["data"]["accessToken"]
+    end
+
+    # Get the resolved config for a customer-registered MCP server (LEA-143).
+    # Returns the customer's MCP URL plus auth headers (e.g. +Authorization:
+    # Bearer ...+ for bearer-auth servers) -- feed this directly into your
+    # MCP client. Leash isn't on the MCP request path.
+    #
+    # @param slug [String] the MCP server slug
+    # @return [Hash] hash with "slug", "displayName", "url", and "headers"
+    # @raise [Leash::Error] if the platform returns a non-success response
+    #   (e.g. code +unknown_mcp_server+)
+    def get_custom_mcp_config(slug)
+      uri = URI("#{@platform_url}/api/integrations/mcp-config/#{URI.encode_www_form_component(slug)}")
+
+      request = Net::HTTP::Get.new(uri)
+      request["Authorization"] = "Bearer #{@auth_token}" if @auth_token
+      request["X-API-Key"] = @api_key if @api_key
+
+      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+        http.request(request)
+      end
+
+      data = JSON.parse(response.body)
+
+      unless data["success"]
+        raise_error(data)
+      end
+
+      data["data"]
+    end
+
     # Call any MCP server tool directly.
     #
     # @param package_name [String] the npm package name of the MCP server
