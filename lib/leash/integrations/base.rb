@@ -18,11 +18,9 @@ module Leash
       end
 
       # Drop nil values from a hash so we never send `{"foo":null}` payloads
-      # — mirrors the Python provider behaviour.
+      # — mirrors the Python provider behaviour. Uses Hash#compact (Ruby 2.4+).
       def compact_params(hash)
-        result = {}
-        hash.each { |k, v| result[k] = v unless v.nil? }
-        result
+        hash.compact
       end
     end
 

@@ -108,6 +108,8 @@ module Leash
 
   class TokenExpiredError < Error
     def initialize(message = "Token expired.", **opts)
+      # Legacy code casing — kept as snake_case to preserve 0.3 behavior for
+      # callers matching on err.code. New errors use SCREAMING_SNAKE.
       opts[:code] ||= "token_expired"
       super(message, **opts)
     end

@@ -108,6 +108,12 @@ module Leash
       # @return [Leash::User, nil] the authenticated user, or `nil` when not
       #   authenticated. Never raises — swallows decode errors so handlers can
       #   branch with a clean `if user.nil?`.
+      #
+      # Note: this method reads ONLY the `leash-auth` cookie from the request.
+      # `Authorization: Bearer <jwt>` headers are deliberately NOT used for
+      # identity resolution here — they're reserved for env-fetch fallback +
+      # CLI/agent flows. To get the user from a Bearer token, you'd hit
+      # `/api/auth/me` directly with that token.
       def user
         Leash::Auth.get_user(@request)
       rescue Leash::AuthError

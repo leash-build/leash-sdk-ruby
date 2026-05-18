@@ -23,7 +23,7 @@ gem "leash-sdk"
 gem install leash-sdk
 ```
 
-Requires Ruby `>= 2.7`. The only runtime dependency is [`jwt`](https://rubygems.org/gems/jwt).
+Requires Ruby `>= 2.7` (Ruby `3.0+` recommended — 2.7 is EOL since 2023-03; system macOS Ruby 2.6.x is below the floor and will need a newer Ruby via rbenv/asdf/homebrew). The only runtime dependency is [`jwt`](https://rubygems.org/gems/jwt).
 
 ## Setup
 

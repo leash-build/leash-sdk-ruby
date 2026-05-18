@@ -74,6 +74,17 @@ class TestIntegrationsCalendar < Minitest::Test
     assert_equal({ "eventId" => "evt-1" }, @runner.request_body)
   end
 
+  # Pins the backward-compat path: callers passing `end:` (e.g. via hash splat
+  # `**params` where params has `end: {...}`) get routed to the wire `"end"`
+  # field. The Ruby `end` keyword forces us to use `end_time:` on the method
+  # signature, but the wire payload uses `"end"`.
+  def test_create_event_accepts_end_via_hash_splat
+    params = { summary: "Standup", start: { "dateTime" => "2026-05-15T10:00:00Z" }, end: { "dateTime" => "2026-05-15T10:30:00Z" } }
+    @client.integrations.calendar.create_event(**params)
+    body = @runner.request_body
+    assert_equal({ "dateTime" => "2026-05-15T10:30:00Z" }, body["end"])
+  end
+
   def test_get_event_with_calendar_id
     @client.integrations.calendar.get_event("evt-1", calendar_id: "primary")
     assert_equal({ "eventId" => "evt-1", "calendarId" => "primary" }, @runner.request_body)
