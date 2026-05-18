@@ -8,11 +8,11 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Leash"]
   spec.email         = ["hello@leash.build"]
 
-  spec.summary       = "Ruby SDK for the Leash platform integrations API"
-  spec.description   = "Access Gmail, Google Calendar, Google Drive, and more through the Leash platform proxy. No API keys needed -- uses your Leash auth token."
+  spec.summary       = "Unified Ruby SDK for the Leash platform — auth, env, integrations."
+  spec.description   = "Server-side Leash client. Resolve the request user, read app env-vars at runtime, and call platform integrations (Gmail, Google Calendar, Google Drive, Linear, plus a generic escape hatch). Framework-agnostic — works with Rails, Sinatra, Hanami, or plain Rack."
   spec.homepage      = "https://github.com/leash-build/leash-sdk-ruby"
   spec.license       = "Apache-2.0"
-  spec.required_ruby_version = ">= 3.0"
+  spec.required_ruby_version = ">= 2.7"
 
   spec.metadata["homepage_uri"]    = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
@@ -22,4 +22,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "jwt", ">= 2.7"
+
+  spec.add_development_dependency "minitest", ">= 5.0"
 end
